@@ -8,21 +8,27 @@ import { useEffect } from 'react';
 const tasksKey = 'tasks';
 const doneKey = 'done'
 
+
 function TODOApp() {
     const [tasks, setTasks] = useState(['kek', 'puk', 'lol', 'lkgl', 'wtf']);
     const [doneTasks, setDoneTasks] = useState(['done']);
 
     useEffect(() => {
-            setTasks(JSON.parse(localStorage.getItem(tasksKey)));
-            setDoneTasks(JSON.parse(localStorage.getItem(doneKey)));
-        },
+        setTasks(JSON.parse(localStorage.getItem(tasksKey)));
+        setDoneTasks(JSON.parse(localStorage.getItem(doneKey)));
+     }, []
+    );
+
+    useEffect(()=> {
+        localStorage.setItem(tasksKey, JSON.stringify(tasks));
+        localStorage.setItem(doneKey, JSON.stringify(doneTasks));
+    }, [tasks,doneTasks]
     );
 
 
     function addNewTask(task) {
         if (task) {
             setTasks(tasks.concat(task));
-            localStorage.setItem(tasksKey, JSON.stringify(tasks));
         }
     }
 
@@ -31,10 +37,8 @@ function TODOApp() {
         newArr.splice(taskIndex, 1)
         if (key === doneKey) {
             setDoneTasks(newArr);
-            localStorage.setItem(doneKey, JSON.stringify(doneTasks));
         } else {
             setTasks(newArr);
-            localStorage.setItem(tasksKey, JSON.stringify(tasks));
         }
     }
 
@@ -45,10 +49,8 @@ function TODOApp() {
         deleteThisTask(taskIndex, from, key);
         if (to === tasks) {
             setTasks(newArr);
-            localStorage.setItem(tasksKey, JSON.stringify(tasks));
         } else {
             setDoneTasks(newArr);
-            localStorage.setItem(doneKey, JSON.stringify(doneTasks));
         }
     }
 
