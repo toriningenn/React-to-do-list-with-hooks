@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from "react-dom";
 import './index.css';
+import axios from 'axios';
 import { useState } from 'react';
 import { useEffect } from 'react';
 
@@ -10,46 +11,83 @@ const doneKey = 'done'
 
 
 function TODOApp() {
-    const [tasks, setTasks] = useState(['kek', 'puk', 'lol', 'lkgl', 'wtf']);
-    const [doneTasks, setDoneTasks] = useState(['done']);
+    const [tasks, setTasks] = useState([]);
+    const [doneTasks, setDoneTasks] = useState([]);
 
     useEffect(() => {
-        setTasks(JSON.parse(localStorage.getItem(tasksKey)));
-        setDoneTasks(JSON.parse(localStorage.getItem(doneKey)));
-     }, []
+            axios.get("http://localhost:8080/api/tasks")
+                .then(response => {
+                    let allTasks = response.data;
+                    allTasks.map(task => {
+                        if (task.statusString === "TASKTODO" && !tasks.includes(task)) {
+                            setTasks(tasks.concat(task));
+                        } else {
+                            setDoneTasks(doneTasks.concat(task));
+                        }
+                        return null;
+                    });
+                });
+        }, []
     );
 
-    useEffect(()=> {
-        localStorage.setItem(tasksKey, JSON.stringify(tasks));
-        localStorage.setItem(doneKey, JSON.stringify(doneTasks));
-    }, [tasks,doneTasks]
-    );
+    //useEffect(()=> {
+    //    localStorage.setItem(tasksKey, JSON.stringify(tasks));
+   //     localStorage.setItem(doneKey, JSON.stringify(doneTasks));
+ //   }, [tasks,doneTasks]
+ //   );
 
 
     function addNewTask(task) {
         if (task) {
             setTasks(tasks.concat(task));
+            //по дефолту сделает jsonoм?
+            axios.post("http://localhost:8080/api/add", task)
+                .catch(function (error) {
+                    console.log(error);
+                });
         }
     }
 
     function deleteThisTask(taskIndex, arr, key) {
+        let id;
         const newArr = [...arr]
         newArr.splice(taskIndex, 1)
         if (key === doneKey) {
+            id = doneTasks[taskIndex].id;
+            axios.delete(`http://localhost:8080/api/${id}`,)
+                .catch(function (error) {
+                    console.log(error);
+                });
             setDoneTasks(newArr);
         } else {
+            id = tasks[taskIndex].id;
+            axios.delete(`http://localhost:8080/api/${id}`,)
+                .catch(function (error) {
+                    console.log(error);
+                });
             setTasks(newArr);
         }
     }
 
     function moveTask(taskIndex, from, to, key) {
+        let id;
         let newArr = [...to];
         let task = from[taskIndex];
         newArr.push(task);
         deleteThisTask(taskIndex, from, key);
         if (to === tasks) {
+            id = doneTasks[taskIndex].id;
+            axios.post(`http://localhost:8080/api/${id}`)
+                .catch(function (error) {
+                    console.log(error);
+                });
             setTasks(newArr);
         } else {
+            id = tasks[taskIndex].id;
+            axios.post(`http://localhost:8080/api/${id}`)
+                .catch(function (error) {
+                    console.log(error);
+                });
             setDoneTasks(newArr);
         }
     }
@@ -70,7 +108,10 @@ function MyForm(props) {
     const [newTask, setNewTask] = useState('');
 
     function changeHandler(event) {
-        setNewTask(event.target.value);
+        setNewTask({
+            task: event.target.value,
+            statusString: "TASKTODO"
+        });
     }
 
     function submitHandler(event) {
@@ -82,7 +123,7 @@ function MyForm(props) {
     return (
         <form onSubmit={submitHandler}>
             <label>Новая задача:</label>
-            <input type="text" value={newTask} onChange={changeHandler}/>
+            <input type="text" value={newTask.task} onChange={changeHandler}/>
             <input type="submit"/>
         </form>
     );
@@ -99,7 +140,7 @@ function Tasks(props) {
                                 props.moveFunc(props.todoList.indexOf(task),
                                     props.todoList, props.doneList, tasksKey)}
                             look={'✓'}/>
-                        {task}
+                        {task.task}
                         <DeleteButton
                             value={() => props.deleteFunc(
                                 props.todoList.indexOf(task),
@@ -116,7 +157,7 @@ function Tasks(props) {
                                     props.moveFunc(props.doneList.indexOf(task),
                                         props.doneList, props.todoList, doneKey)}
                                 look={'X'}/>
-                            <s>{task}</s>
+                            <s>{task.task}</s>
                             <DeleteButton
                                 value={() => props.deleteFunc(
                                     props.doneList.indexOf(task),
